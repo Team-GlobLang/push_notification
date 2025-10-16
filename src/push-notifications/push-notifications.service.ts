@@ -1,8 +1,9 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import * as admin from 'firebase-admin';
-const serviceAccount = require('../config/globalang-push-noty-firebase-adminsdk-fbsvc-d907fad7cc.json');
 import { PrismaService } from 'src/prisma/prisma.service';
 import { NotificationDto } from './notification.dto';
+import path from 'path';
+import { readFileSync } from 'fs';
 
 @Injectable()
 export class PushNotificationsService implements OnModuleInit {
@@ -11,10 +12,20 @@ export class PushNotificationsService implements OnModuleInit {
 
   private app: admin.app.App;
 
-  onModuleInit() {
+  async onModuleInit() {
+    const serviceAccountPath = path.resolve(
+      __dirname,
+      '../../../config/globalang-push-noty-firebase-adminsdk-fbsvc-d907fad7cc.json',
+    );
+
+    const serviceAccount = JSON.parse(
+      readFileSync(serviceAccountPath, 'utf-8'),
+    );
     this.app = admin.initializeApp({
       credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
     });
+
+    this.logger.log('Firebase Admin initialized successfully');
   }
 
   async registerToken(data: { token: string; app: string }) {
@@ -33,7 +44,10 @@ export class PushNotificationsService implements OnModuleInit {
   }
 
   async notifyUsers(notification: NotificationDto) {
-    this.logger.log('Enviando notificaciones a Usuarios', notification.notification.title);
+    this.logger.log(
+      'Enviando notificaciones a Usuarios',
+      notification.notification.title,
+    );
 
     const devices = await this.prismaService.deviceToken.findMany({
       where: { app: 'GLOB' },
@@ -64,7 +78,10 @@ export class PushNotificationsService implements OnModuleInit {
   }
 
   async notifyModerators(notification: NotificationDto) {
-    this.logger.log('Enviando notificaciones a Moderadores', notification.notification.title);
+    this.logger.log(
+      'Enviando notificaciones a Moderadores',
+      notification.notification.title,
+    );
 
     const devices = await this.prismaService.deviceToken.findMany({
       where: { app: 'MOD' },
