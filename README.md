@@ -1,98 +1,106 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# push_notifications
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Descripción
+-----------
+`push_notifications` gestiona el envío de notificaciones push usando Firebase Cloud Messaging (FCM). Mantiene registro de tokens de dispositivo y maneja la lógica de envío.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
-
-## Description
-
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
-## Project setup
-
+Variables de entorno (desde `.env.templates`)
+-------------------------------------------------
 ```bash
-$ npm install
+# ============================
+# GLOBAL / BASE CONFIG
+# ============================
+NODE_ENV=production
+NATS_SERVERS=nats://nats-server:4222
+
+# No hay sección específica en .env.templates para push_notifications,
+# pero requiere las siguientes variables:
 ```
 
-## Compile and run the project
+Variables adicionales requeridas en `push_notifications/.env`:
+```env
+# Prisma requiere DATABASE_URL para conectarse a la base de datos
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/push_notifications"
+# En Docker será: DATABASE_URL="postgresql://postgres:postgres@db-push:5432/push_notifications"
 
-```bash
-# development
-$ npm run start
+# Configuración de Firebase
+# Ruta al archivo JSON de credenciales generado desde Firebase Console
+# (Project Settings > Service accounts > Generate new private key)
+FIREBASE_CREDENTIALS_PATH="./config/firebase-adminsdk.json"
+# En Docker será: FIREBASE_CREDENTIALS_PATH="/app/config/firebase-adminsdk.json"
 
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+# ID del proyecto de Firebase (se encuentra en la configuración del proyecto)
+FCM_PROJECT_ID="tu-proyecto-firebase"
 ```
 
-## Run tests
+Instalación y pasos para desarrollo local
+----------------------------------------
+1. Configura las variables de entorno:
 
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+```powershell
+copy ..\.env.templates .env
+# Edita push_notifications\.env y añade las variables necesarias
 ```
 
-## Deployment
+2. Configura Firebase:
+   - Ve a Firebase Console > Project Settings > Service Accounts
+   - Haz clic en "Generate New Private Key"
+   - Guarda el archivo JSON descargado como `config/firebase-adminsdk.json`
+   - En desarrollo: usa la ruta relativa al archivo JSON
+   - En Docker: el archivo se montará automáticamente en `/app/config/`
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+3. Instala dependencias y genera el cliente Prisma:
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+```powershell
+cd push_notifications
+npm ci
+npx prisma generate
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+4. Ejecuta migraciones de desarrollo:
 
-## Resources
+```powershell
+npx prisma migrate dev --name init
+```
 
-Check out a few resources that may come in handy when working with NestJS:
+5. Comandos disponibles:
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+```powershell
+# Compilar el proyecto
+npm run build
 
-## Support
+# Ejecutar en producción
+npm run start
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+# Desarrollo con hot-reload
+npm run start:dev
+```
 
-## Stay in touch
+Construir imagen Docker
+-----------------------
+```powershell
+docker build -t globalang/push-notifications:latest .
+```
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+Ejecución recomendada en conjunto
+--------------------------------
+```powershell
+# Desde la raíz del proyecto
+docker-compose up -d --build
+```
 
-## License
+Notas importantes
+----------------
+- El archivo de credenciales de Firebase NO debe subirse al repositorio.
+- Las credenciales de Firebase se montan en el contenedor vía Docker Compose.
+- Revisa la configuración de Firebase en la consola de Firebase para:
+  - Permisos y roles del service account
+  - Configuración de FCM
+  - Cuotas y límites de mensajes
+- En producción usa `npx prisma migrate deploy` en el pipeline.
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+Archivos relevantes
+------------------
+- Schema Prisma: `prisma/schema.prisma`
+- Cliente generado: `generated/prisma`
+- Credenciales Firebase: `config/globalang-push-noty-firebase-adminsdk-fbsvc-d907fad7cc.json`
