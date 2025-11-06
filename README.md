@@ -23,14 +23,15 @@ Variables adicionales requeridas en `push_notifications/.env`:
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/push_notifications"
 # En Docker será: DATABASE_URL="postgresql://postgres:postgres@db-push:5432/push_notifications"
 
-# Configuración de Firebase
-# Ruta al archivo JSON de credenciales generado desde Firebase Console
-# (Project Settings > Service accounts > Generate new private key)
-FIREBASE_CREDENTIALS_PATH="./config/firebase-adminsdk.json"
-# En Docker será: FIREBASE_CREDENTIALS_PATH="/app/config/firebase-adminsdk.json"
-
-# ID del proyecto de Firebase (se encuentra en la configuración del proyecto)
-FCM_PROJECT_ID="tu-proyecto-firebase"
+# Configuración de Firebase (valores del JSON de credenciales)
+# Para obtener estos valores, descarga el JSON de Firebase Console:
+# Project Settings > Service Accounts > Generate New Private Key
+FIREBASE_PROJECT_ID="tu-proyecto-firebase"
+FIREBASE_PRIVATE_KEY_ID="abc123..."
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+FIREBASE_CLIENT_EMAIL="firebase-adminsdk-xxxxx@tu-proyecto.iam.gserviceaccount.com"
+FIREBASE_CLIENT_ID="123456789..."
+FIREBASE_CLIENT_CERT_URL="https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-xxxxx%40tu-proyecto.iam.gserviceaccount.com"
 ```
 
 Instalación y pasos para desarrollo local
@@ -45,9 +46,14 @@ copy ..\.env.templates .env
 2. Configura Firebase:
    - Ve a Firebase Console > Project Settings > Service Accounts
    - Haz clic en "Generate New Private Key"
-   - Guarda el archivo JSON descargado como `config/firebase-adminsdk.json`
-   - En desarrollo: usa la ruta relativa al archivo JSON
-   - En Docker: el archivo se montará automáticamente en `/app/config/`
+   - Abre el archivo JSON descargado y copia cada valor a tu archivo `.env`:
+     - `project_id` → `FIREBASE_PROJECT_ID`
+     - `private_key_id` → `FIREBASE_PRIVATE_KEY_ID`
+     - `private_key` → `FIREBASE_PRIVATE_KEY` (mantén los \n en el string)
+     - `client_email` → `FIREBASE_CLIENT_EMAIL`
+     - `client_id` → `FIREBASE_CLIENT_ID`
+     - `client_x509_cert_url` → `FIREBASE_CLIENT_CERT_URL`
+   - IMPORTANTE: No subas el archivo JSON al repositorio
 
 3. Instala dependencias y genera el cliente Prisma:
 
@@ -91,16 +97,17 @@ docker-compose up -d --build
 
 Notas importantes
 ----------------
-- El archivo de credenciales de Firebase NO debe subirse al repositorio.
-- Las credenciales de Firebase se montan en el contenedor vía Docker Compose.
+- Las credenciales de Firebase ahora se gestionan mediante variables de entorno
+- La private key de Firebase debe mantener los saltos de línea (\n)
+- NO subas archivos JSON de credenciales al repositorio
 - Revisa la configuración de Firebase en la consola de Firebase para:
   - Permisos y roles del service account
   - Configuración de FCM
   - Cuotas y límites de mensajes
-- En producción usa `npx prisma migrate deploy` en el pipeline.
+- En producción usa `npx prisma migrate deploy` en el pipeline
 
 Archivos relevantes
 ------------------
 - Schema Prisma: `prisma/schema.prisma`
 - Cliente generado: `generated/prisma`
-- Credenciales Firebase: `config/globalang-push-noty-firebase-adminsdk-fbsvc-d907fad7cc.json`
+- Servicio: `src/push-notifications/push-notifications.service.ts`
